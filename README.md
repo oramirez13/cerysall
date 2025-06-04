@@ -1,6 +1,6 @@
-# CERYSALL – Herramienta de Reconocimiento en Línea de Comandos
+# CERYSALL – Herramienta de Reconocimiento
 
-Este script Python permite realizar tareas básicas de reconocimiento de información sobre un dominio o servidor objetivo, utilizando herramientas comunes de hacking ético.
+Este script de Python permite realizar tareas básicas de reconocimiento de información sobre un dominio o servidor objetivo, utilizando herramientas comunes de hacking ético.
 
 ## Funcionalidades
 
