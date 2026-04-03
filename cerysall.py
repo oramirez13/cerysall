@@ -56,7 +56,7 @@ def banner():
 
 
 # ---------------------------------------------------------
-# Función de Ping con Detección de OS (Mejora Técnica)
+# Función de Ping con Detección de OS
 # ---------------------------------------------------------
 def ping_con_deteccion():
     """Realiza un ping y analiza el TTL para adivinar el OS del objetivo."""
