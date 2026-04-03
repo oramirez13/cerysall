@@ -12,7 +12,7 @@ from colorama import (
 init(autoreset=True)
 
 # --- Configuración de Diccionarios "Top 20" (Optimización) ---
-# Definimos listas estáticas para que el script sea portátil y no dependa de archivos externos .txt.
+# Se definen listas estáticas para que el script sea portátil y no dependa de archivos externos .txt.
 TOP_SUBDOMAINS = [
     "www",
     "mail",
@@ -124,7 +124,7 @@ def escanear_subdominios():
             # Si el subdominio no resuelve o no hay servidor web, simplemente continúa.
             pass
         except requests.Timeout:
-            # Si el servidor tarda demasiado en responder, lo ignoramos.
+            # Si el servidor tarda demasiado en responder, el script lo ignora.
             pass
 
 
