@@ -1,18 +1,14 @@
-import os  # Librería para interactuar con el Sistema Operativo (limpiar pantalla, ejecutar comandos).
-import subprocess  # Permite ejecutar procesos externos y capturar su salida.
-import requests  # Fundamental para realizar peticiones HTTP/HTTPS a servidores web.
-import whois  # Librería para consultar información de registro de dominios.
-import dns.resolver  # Parte de dnspython, utilizada para resolver registros DNS (A, MX, TXT, etc.).
-from colorama import (
-    Fore,
-    init,
-)  # Permite dar formato y colores a la salida de la terminal.
+import os  # Interactúa con el sistema operativo (limpiar pantalla, ejecución de comandos).
+import subprocess  # Permite ejecutar comandos y capturar su salida de texto para analizarla.
+import requests  # Librería para realizar peticiones HTTP y auditoría web.
+import whois  # Realiza consultas a bases de datos de registro de dominios.
+import dns.resolver  # Resuelve registros DNS específicos como A, MX o TXT.
+from colorama import Fore, init  # Proporciona colores ANSI para la interfaz de usuario.
 
-# Inicializa colorama para que los códigos de color se limpien automáticamente tras cada print.
+# Inicializa colorama para que los colores se restablezcan tras cada línea.
 init(autoreset=True)
 
-# --- Configuración de Diccionarios "Top 20" (Optimización) ---
-# Se definen listas estáticas para que el script sea portátil y no dependa de archivos externos .txt.
+# Listas internas para escaneos rápidos (Top 20 comunes).
 TOP_SUBDOMAINS = [
     "www",
     "mail",
@@ -23,50 +19,28 @@ TOP_SUBDOMAINS = [
     "staging",
     "api",
     "test",
-    "portal",
     "vpn",
-    "support",
-    "webmail",
-    "remote",
-    "secure",
-    "apps",
-    "cloud",
-    "m",
-    "shop",
-    "git",
 ]
-
 TOP_DIRECTORIES = [
     "admin",
     "login",
     "wp-admin",
     "api",
-    "v1",
-    "v2",
     "backup",
     "db",
     "config",
-    "includes",
-    "js",
-    "css",
-    "img",
-    "uploads",
-    "shell",
-    "temp",
     "test",
-    "old",
-    "dev",
     ".env",
 ]
 
 
 def clear():
-    """Limpia la consola detectando si el sistema es Windows (nt) o Unix/Linux."""
+    """Limpia la terminal según el entorno (Windows o Linux)."""
     os.system("cls" if os.name == "nt" else "clear")
 
 
 def banner():
-    """Imprime el arte ASCII del programa con colores cian y magenta."""
+    """Muestra el logo del proyecto en la terminal."""
     print(
         Fore.CYAN
         + r"""
@@ -81,140 +55,128 @@ def banner():
     print(Fore.MAGENTA + "                    by orami – InfoSec ⚔\n")
 
 
-# --- Funciones de Reconocimiento ---
-
-
-def ping():
-    """Verifica si un host está vivo enviando paquetes ICMP."""
+# ---------------------------------------------------------
+# Función de Ping con Detección de OS (Mejora Técnica)
+# ---------------------------------------------------------
+def ping_con_deteccion():
+    """Realiza un ping y analiza el TTL para adivinar el OS del objetivo."""
     target = input(Fore.YELLOW + "\n[+] Ingresa la IP o dominio objetivo: ")
-    print(Fore.YELLOW + f"[i] Enviando paquetes ICMP a {target}...\n")
-    # Windows usa '-n' para el conteo de paquetes, Linux/Unix usa '-c'.
+    print(Fore.YELLOW + f"[i] Analizando host {target}...\n")
+
+    # Configuramos el comando según el OS del host (Arch Linux usa -c).
     param = "-n" if os.name == "nt" else "-c"
-    # Ejecuta el comando ping del sistema operativo.
-    os.system(f"ping {param} 4 {target}")
+    comando = ["ping", param, "4", target]
+
+    try:
+        # Ejecutamos el ping y capturamos la respuesta.
+        resultado = subprocess.run(comando, capture_output=True, text=True)
+        salida = resultado.stdout
+        print(salida)
+
+        # Análisis de TTL: Windows suele usar 128, Linux/Unix usa 64.
+        if "ttl=" in salida.lower():
+            if "ttl=128" in salida.lower():
+                print(
+                    Fore.CYAN
+                    + "[*] Detección: El objetivo parece ser un sistema WINDOWS."
+                )
+            elif "ttl=64" in salida.lower():
+                print(
+                    Fore.CYAN
+                    + "[*] Detección: El objetivo parece ser un sistema LINUX/UNIX."
+                )
+            else:
+                print(Fore.CYAN + "[*] Detección: OS desconocido (TTL inusual).")
+        else:
+            print(
+                Fore.RED
+                + "[-] El host no respondió al ping (posible Firewall bloqueando ICMP)."
+            )
+
+    except Exception as e:
+        print(Fore.RED + f"[-] Error en la ejecución: {e}")
 
 
 def escanear_puertos():
-    """Llama a Nmap para identificar puertos abiertos."""
-    target = input(Fore.YELLOW + "\n[+] Ingresa la IP o dominio para Nmap: ")
-    print(
-        Fore.YELLOW
-        + f"[i] Ejecutando escaneo rápido (Top 100 puertos) en {target}...\n"
-    )
-    # -Pn: No intenta ping previo (útil si el host bloquea ICMP).
-    # -F: Modo rápido, escanea los 100 puertos más comunes en lugar de 1000.
+    """Escaneo rápido con Nmap ignorando el bloqueo de ping (-Pn)."""
+    target = input(Fore.YELLOW + "\n[+] Ingresa la IP o dominio: ")
+    print(Fore.YELLOW + f"[i] Iniciando Nmap sobre {target}...\n")
     os.system(f"nmap -Pn -F {target}")
 
 
 def escanear_subdominios():
-    """Intenta resolver subdominios comunes para ampliar la superficie de ataque."""
-    dominio = input(Fore.YELLOW + "\n[+] Ingresa el dominio (ej: ejemplo.com): ")
-    print(
-        Fore.YELLOW
-        + f"[i] Buscando los {len(TOP_SUBDOMAINS)} subdominios más comunes...\n"
-    )
-
+    """Busca subdominios activos mediante peticiones HTTP."""
+    dominio = input(Fore.YELLOW + "\n[+] Dominio (ej: ejemplo.com): ")
     for sub in TOP_SUBDOMAINS:
         url = f"http://{sub}.{dominio}"
         try:
-            # Realiza una petición GET; si el subdominio no existe, lanzará una excepción de conexión.
             requests.get(url, timeout=2)
-            print(Fore.GREEN + f"[+] Activo: {url}")
-        except requests.ConnectionError:
-            # Si el subdominio no resuelve o no hay servidor web, simplemente continúa.
-            pass
-        except requests.Timeout:
-            # Si el servidor tarda demasiado en responder, el script lo ignora.
+            print(Fore.GREEN + f"[+] Encontrado: {url}")
+        except:
             pass
 
 
 def whois_lookup():
-    """Obtiene datos del registrador y registros de dirección IP (DNS)."""
-    dominio = input(Fore.YELLOW + "\n[+] Ingresa el dominio objetivo: ")
-    print(Fore.YELLOW + "\n[i] Consultando WHOIS...")
+    """Muestra datos WHOIS y registros IP A."""
+    dominio = input(Fore.YELLOW + "\n[+] Dominio: ")
     try:
-        # Consulta la base de datos pública de registros de dominios.
         w = whois.whois(dominio)
-        print(Fore.GREEN + f"Registrador: {w.registrar}")
-        print(Fore.GREEN + f"País: {w.country}")
+        print(Fore.GREEN + f"[+] Registrar: {w.registrar} | País: {w.country}")
+        res = dns.resolver.resolve(dominio, "A")
+        for ip in res:
+            print(Fore.GREEN + f"[+] IPv4: {ip}")
     except:
-        print(Fore.RED + "[-] No se pudo obtener información WHOIS.")
-
-    print(Fore.YELLOW + "\n[i] Consultando registros DNS (Tipo A)...")
-    try:
-        # Busca específicamente el registro 'A' (mapeo de nombre a dirección IPv4).
-        respuestas = dns.resolver.resolve(dominio, "A")
-        for rdata in respuestas:
-            print(Fore.GREEN + f"[+] IP encontrada: {rdata}")
-    except:
-        print(Fore.RED + "[-] Error en la resolución DNS.")
+        print(Fore.RED + "[-] Error en consulta WHOIS/DNS.")
 
 
 def escanear_directorios():
-    """Busca archivos o carpetas ocultas en el servidor web (Fuzzing)."""
-    objetivo = input(Fore.YELLOW + "\n[+] Ingresa la URL (ej: http://ejemplo.com): ")
-    # Asegura que la URL tenga el protocolo para que 'requests' funcione correctamente.
-    if not objetivo.startswith("http"):
-        objetivo = "http://" + objetivo
-
-    print(Fore.YELLOW + f"[i] Escaneando {len(TOP_DIRECTORIES)} rutas críticas...\n")
+    """Fuzzing de directorios web con manejo de códigos de estado."""
+    url_base = input(Fore.YELLOW + "\n[+] URL (ej: http://192.168.1.1): ")
+    if not url_base.startswith("http"):
+        url_base = "http://" + url_base
 
     for ruta in TOP_DIRECTORIES:
-        url = f"{objetivo.rstrip('/')}/{ruta}"
+        url = f"{url_base.rstrip('/')}/{ruta}"
         try:
-            # allow_redirects=False es clave: evita que un error 404 sea redirigido a un 200 (falso positivo).
-            r = requests.get(url, timeout=3, allow_redirects=False)
-
-            # Clasifica el hallazgo según el Código de Estado HTTP.
+            # allow_redirects=False evita falsos positivos por redirección.
+            r = requests.get(url, timeout=2, allow_redirects=False)
             if r.status_code == 200:
                 print(Fore.GREEN + f"[+] [200 OK] -> {url}")
             elif r.status_code in [301, 302]:
-                print(Fore.BLUE + f"[*] [Redirección {r.status_code}] -> {url}")
-            elif r.status_code == 403:
-                print(Fore.RED + f"[!] [Prohibido 403] -> {url}")
-        except requests.RequestException:
-            # Captura cualquier error de red (pérdida de conexión, etc.).
+                print(Fore.BLUE + f"[*] [Redir {r.status_code}] -> {url}")
+        except:
             pass
 
 
-# --- Menú de Control ---
-
-
 def menu():
-    """Bucle principal que gestiona la interacción con el usuario."""
+    """Bucle principal de la herramienta."""
     while True:
-        clear()  # Limpia la pantalla en cada iteración para mantener el orden.
-        banner()  # Muestra el logo.
-        print(Fore.GREEN + "[1] Ping de conectividad")
+        clear()
+        banner()
+        print(Fore.GREEN + "[1] Ping y Detección de OS")
         print(Fore.GREEN + "[2] Escaneo de puertos (Nmap)")
-        print(Fore.GREEN + "[3] Escaneo de subdominios (Top 20)")
+        print(Fore.GREEN + "[3] Escaneo de subdominios")
         print(Fore.GREEN + "[4] WHOIS & DNS Lookup")
-        print(Fore.GREEN + "[5] Escaneo de directorios web (Top 20)")
+        print(Fore.GREEN + "[5] Escaneo de directorios web")
         print(Fore.RED + "[6] Salir\n")
 
-        opcion = input(Fore.YELLOW + "Selecciona una opción: ")
-
-        # Estructura de control para ejecutar la función seleccionada.
-        if opcion == "1":
-            ping()
-        elif opcion == "2":
+        op = input(Fore.YELLOW + "Selecciona una opción: ")
+        if op == "1":
+            ping_con_deteccion()
+        elif op == "2":
             escanear_puertos()
-        elif opcion == "3":
+        elif op == "3":
             escanear_subdominios()
-        elif opcion == "4":
+        elif op == "4":
             whois_lookup()
-        elif opcion == "5":
+        elif op == "5":
             escanear_directorios()
-        elif opcion == "6":
-            print(Fore.RED + "\nCerrando herramientas de reconocimiento...")
-            break  # Rompe el bucle 'while' y finaliza el programa.
+        elif op == "6":
+            break
         else:
-            print(Fore.RED + "\n[!] Selección inválida.")
-
-        # Pausa la ejecución para que el usuario pueda leer los resultados antes de limpiar.
-        input(Fore.YELLOW + "\nPresiona ENTER para volver al menú...")
+            print(Fore.RED + "[!] Opción inválida.")
+        input(Fore.YELLOW + "\nENTER para continuar...")
 
 
-# Punto de entrada estándar de Python.
 if __name__ == "__main__":
     menu()
