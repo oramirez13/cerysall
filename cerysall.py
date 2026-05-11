@@ -47,11 +47,11 @@ def banner():
     print(
         Fore.CYAN
         + r"""
-     _____ ______ _______     _______          _ _    _ _
-    / ____|  ____|  __ \ \   / / ____|   /\   | | |  | | |
-   | |    | |__  | |__) \ \_/ / (___    /  \  | | |  | | |
-   | |    |  __| |  _  / \   / \___ \  / /\ \ | | |  | | |
-   | |____| |____| | \ \  | |  ____) |/ ____ \| |____| |____
+     _____ ______ _______     _______          _ _    _ _    
+    / ____|  ____|  __ \ \   / / ____|   /\   | | |  | | |   
+   | |    | |__  | |__) \ \_/ / (___    /  \  | | |  | | |   
+   | |    |  __| |  _  / \   / \___ \  / /\ \ | | |  | | |   
+   | |____| |____| | \ \  | |  ____) |/ ____ \| |____| |____ 
     \_____|______|_|  \_\ |_| |_____//_/    \_\______|______|
     """
     )
@@ -121,7 +121,10 @@ def ping_con_deteccion():
 
     # Si hubo salida pero no un TTL conocido, se informa de forma simple.
     if result.stdout.strip() != "":
-        print(Fore.CYAN + "[*] El host respondio, pero el TTL no coincide con un valor comun.")
+        print(
+            Fore.CYAN
+            + "[*] El host respondio, pero el TTL no coincide con un valor comun."
+        )
         return
 
     # Si no hubo salida util, se informa que el host no respondio.
@@ -181,7 +184,9 @@ def escanear_subdominios():
 
     # Si no se encontro nada, lo indicamos al usuario.
     if not found_any:
-        print(Fore.RED + "[-] No se encontraron subdominios activos en la lista basica.")
+        print(
+            Fore.RED + "[-] No se encontraron subdominios activos en la lista basica."
+        )
 
 
 def whois_lookup():
@@ -301,7 +306,7 @@ def menu():
             pause()
         elif option == "6":
             # Esta linea cierra el programa de forma limpia.
-            print(Fore.MAGENTA + "Saliendo de Cerysall...")
+            print(Fore.MAGENTA + "Until we meet again, Hacker...")
             break
         else:
             # Si la opcion no existe, se informa al usuario.
