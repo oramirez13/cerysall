@@ -2,6 +2,15 @@
 
 Cerysall es una herramienta de consola escrita en Python para practicar tareas básicas de reconocimiento de red y web.
 
+## Screenshots
+
+![Cerysall](img/Screenshot_20260226_152442.png)
+![Cerysall](img/Screenshot_20260402_214739.png)
+![Cerysall](img/Screenshot_20260402_214824.png)
+![Cerysall](img/Screenshot_20260402_215813.png)
+![Ping con detección de OS](img/cerysall_ip_ping.png)
+![Escaneo nmap](img/cerysall_nmap.png)
+
 ## Funciones
 
 - Ping con detección básica de sistema operativo por TTL.
